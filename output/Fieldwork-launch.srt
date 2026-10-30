@@ -1,0 +1,34 @@
+1
+00:00:00,380 --> 00:00:05,867
+A spray day can change in a moment. In Fieldwork, preview
+every rig's route in three D.
+
+2
+00:00:07,380 --> 00:00:12,292
+Bring forward the rain. Lose a rig. Hold wet fields, or pause
+for wind.
+
+3
+00:00:14,380 --> 00:00:21,110
+Compare up to three plans, with estimated cost, acres, labor,
+travel, and rain buffer.
+
+4
+00:00:23,380 --> 00:00:30,063
+Inspect the timeline, crew assignments, and rules behind each
+option. Deferred fields keep a reason.
+
+5
+00:00:31,380 --> 00:00:37,076
+Review a crew update before it changes the schedule. Confirm
+what it means before applying it.
+
+6
+00:00:38,380 --> 00:00:44,512
+You choose the plan. Approval stays local, with crew sheets
+and review files ready to export.
+
+7
+00:00:46,380 --> 00:00:54,291
+No new sensors or equipment installation. Open the browser
+replay. Fieldwork: a clearer plan for a changing day.

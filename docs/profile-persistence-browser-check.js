@@ -1,0 +1,26 @@
+const checks=[];
+const check=(v,label)=>{if(!v)throw new Error(label);checks.push(label);};
+const waitFor=async(fn)=>{for(let i=0;i<300;i++){if(fn())return;await new Promise(r=>setTimeout(r,50));}throw new Error('UI timeout');};
+const click=sel=>{const el=document.querySelector(sel);if(!el||el.disabled)throw new Error('Unavailable '+sel);el.click();};
+await waitFor(()=>!state.busy);
+check(state.activeProfile?.farm_name==='Orchard Creek Test Farm'&&state.meta.fields.length===6,'Confirmed farm profile survives reload');
+check(state.feedback.history.length>0,'Feedback conversation survives reload');
+check(!!state.fleetStore.snapshot().active,'Approved workboard survives reload');
+click('[data-view="fleet"]');click('[data-fleet-tab="R1"]');
+let start=document.querySelector('[data-fleet-status="in_progress"]:not(:disabled)');
+if(!start){for(const rig of state.meta.rigs){click(`[data-fleet-tab="${rig.id}"]`);start=document.querySelector('[data-fleet-status="in_progress"]:not(:disabled)');if(start)break;}}
+check(!!start,'A custom-farm job can be started');const field=start.dataset.fleetField;start.click();
+click('[data-view="farm"]');click('[data-farm-action="demo"]');await new Promise(r=>setTimeout(r,50));
+check(state.activeProfile!==null&&state.profileError.includes('hold'),'Underway work blocks farm switching');
+click('[data-view="fleet"]');click(`[data-fleet-field="${field}"][data-fleet-status="done"]`);
+check(state.fleetStore.completedIds().includes(field),'Custom-farm jobs update completion tracking');
+const oldKey=state.fleetStore.key;
+click('[data-view="farm"]');click('[data-farm-action="demo"]');await waitFor(()=>!state.busy&&!state.profileBusy);
+check(state.activeProfile===null&&state.meta.fields.length===40,'Return to demo restores the original field roster');
+check(!state.fleetStore.completedIds().includes(field),'Custom completion does not leak into the demo farm');
+click('[data-view="farm"]');click('[data-farm-action="saved"]');click('[data-farm-action="apply"]');await waitFor(()=>!state.busy&&!state.onboarding.applying);
+check(state.fleetStore.key===oldKey&&state.fleetStore.completedIds().includes(field),'Returning to the same farm restores its job history');
+check(state.result.plans.every(p=>p.schedule.every(j=>j.field_id!==field)),'Reloaded custom completion remains excluded from solver work');
+click('[data-view="disruptions"]');click('[data-disruption-action="analyze"]');await waitFor(()=>state.disruptionPhase==='ready');click('[data-disruption-action="feedback"]');
+check(document.activeElement.matches('[data-feedback-draft]'),'Request changes opens and focuses the feedback composer');
+return {passed:checks.length,checks};

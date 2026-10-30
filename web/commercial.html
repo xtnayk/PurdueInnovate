@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Fieldwork · A better next move</title>
+  <link rel="stylesheet" href="commercial.css">
+  <script src="vendor/three.min.js" defer></script>
+  <script src="simulation.js" defer></script>
+  <script src="commercial.js" defer></script>
+</head>
+<body>
+  <main>
+    <canvas id="commercial-canvas" width="1920" height="1080" aria-label="Fieldwork silent 28-second commercial"></canvas>
+    <div class="player">
+      <button id="commercial-play" type="button">Play commercial</button>
+      <label for="commercial-seek">Preview</label>
+      <input id="commercial-seek" type="range" min="0" max="28" value="0" step="0.01">
+      <output id="commercial-time">0:00 / 0:28</output>
+      <span class="silent">Silent film</span>
+      <a href="./">Open browser demo ↗</a>
+    </div>
+    <p id="commercial-status" role="status">Preparing the 3D commercial…</p>
+  </main>
+  <div id="commercial-world" aria-hidden="true"></div>
+</body>
+</html>

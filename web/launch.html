@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Fieldwork · Launch film</title>
+  <link rel="stylesheet" href="launch.css">
+  <script src="vendor/three.min.js" defer></script>
+  <script src="simulation.js" defer></script>
+  <script src="launch.js" defer></script>
+</head>
+<body>
+  <main>
+    <canvas id="launch-canvas" width="1920" height="1080" aria-label="Fieldwork launch film"></canvas>
+    <div class="player"><button id="film-play" type="button">Play film</button><label for="film-seek">Preview</label><input id="film-seek" type="range" min="0" max="55" value="0" step="0.05"><output id="film-time">0:00 / 0:55</output><a href="./">Open prototype</a></div>
+    <p id="film-status" role="status">Preparing the launch film…</p>
+  </main>
+  <div id="film-world" aria-hidden="true"></div>
+</body>
+</html>

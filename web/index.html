@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#203a35">
+  <title>Fieldwork · Spray planning</title>
+  <meta name="description" content="A local spray planning prototype. Explore weather disruptions, compare feasible schedules, and approve a simulated plan.">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/simulation.css">
+  <link rel="stylesheet" href="/scene-controls.css">
+  <link rel="stylesheet" href="/fleet-dashboard.css">
+  <link rel="stylesheet" href="/disruptions-dashboard.css">
+  <link rel="stylesheet" href="/farm-onboarding.css">
+  <link rel="stylesheet" href="/proposal-feedback.css">
+  <link rel="stylesheet" href="/farm-integration.css">
+  <link rel="stylesheet" href="/plan-agent.css">
+  <link rel="stylesheet" href="/incident-report.css">
+  <link rel="stylesheet" href="/vendor/leaflet.css">
+  <link rel="stylesheet" href="/fleet-map.css">
+  <link rel="stylesheet" href="/map-integration.css">
+  <script src="/vendor/three.min.js" defer></script>
+  <script src="/simulation.js" defer></script>
+  <script src="/fleet-store.js" defer></script>
+  <script src="/fleet-dashboard.js" defer></script>
+  <script src="/plan-actions.js" defer></script>
+  <script src="/disruptions-dashboard.js" defer></script>
+  <script src="/farm-onboarding.js" defer></script>
+  <script src="/proposal-feedback.js" defer></script>
+  <script src="/plan-agent.js" defer></script>
+  <script src="/incident-store.js" defer></script>
+  <script src="/vendor/leaflet.js" defer></script>
+  <script src="/demo-geography.js" defer></script>
+  <script src="/fleet-map.js" defer></script>
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <aside class="rail" aria-label="Primary navigation">
+    <a class="brand-mark" href="#" aria-label="Fieldwork home"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M6 8h20M6 15h15M6 22h10" stroke="currentColor" stroke-width="4"/><path d="m23 20 3 3-3 3" stroke="currentColor" stroke-width="2"/></svg></a>
+    <button class="nav-button active" data-view="board" aria-label="Planning board" title="Planning board"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span class="nav-label">Plan</span></button>
+    <button class="nav-button" data-view="fleet" aria-label="Fleet and crew" title="Fleet and crew"><svg viewBox="0 0 24 24"><path d="M4 16V6h11v10M15 10h4l3 5v3h-3M3 18H1v-6h3M8 18h7"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="18" r="3"/></svg><span class="nav-label">Fleet</span></button>
+    <button class="nav-button" data-view="disruptions" aria-label="Disruptions" title="Disruptions"><svg viewBox="0 0 24 24"><path d="m12 3 10 17H2L12 3Z"/><path d="M12 9v5M12 17v1"/></svg><span class="nav-label">Disruptions</span></button>
+    <button class="nav-button" data-view="farm" aria-label="Farm onboarding chat" title="Farm onboarding chat"><svg viewBox="0 0 24 24"><path d="M3 4h18v13H9l-6 4V4Z"/><path d="M7 8h10M7 12h7"/></svg><span class="nav-label">Farm chat</span></button>
+    <button class="nav-button" data-view="assumptions" aria-label="Data and assumptions" title="Data and assumptions"><svg viewBox="0 0 24 24"><path d="M5 3h10l4 4v14H5zM14 3v5h5M8 12h8M8 16h6"/></svg><span class="nav-label">Data</span></button>
+    <span class="rail-bottom" title="Local demo">FW</span>
+  </aside>
+  <div class="app-shell">
+    <header class="topbar"><a class="wordmark" href="#">fieldwork<span>Spray planning</span></a><div class="topbar-right"><span class="demo-pill"><span></span>Simulation</span><span class="avatar" aria-label="Demo manager">DM</span></div></header>
+    <main id="main">
+      <div class="page-heading"><div><div class="location-line"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M15 8c0 4-5 9-5 9S5 12 5 8a5 5 0 0 1 10 0Z"/><circle cx="10" cy="8" r="1.5"/></svg><span id="farm-location">Tippecanoe County, Indiana</span></div><h1>Today’s spray plan</h1><p class="intro">When the day changes, find your next best move.</p></div><div class="date-block"><span id="demo-date">Simulated workday</span><strong><span class="clock-dot"></span><span id="current-time">8:00 am</span> decision time</strong></div></div>
+
+      <div class="farm-context-banner" id="farm-context-banner"><div><strong id="farm-context-name">Explore the example farm</strong><span id="farm-context-detail">Tell the farm assistant about your fields, equipment, and crew.</span></div><button class="secondary-button" id="open-farm-chat">Set up my farm</button></div>
+      <section id="board-view" class="view">
+        <div id="error-banner" class="error-banner" role="alert" hidden></div>
+        <div class="hardware-note" id="hardware-note"><div><strong>Use the equipment you already have.</strong><p>Runs in a browser. No added sensors, gateways or sprayer hardware.</p><span id="runtime-note">Local solver mode · All field activity is simulated.</span></div><a class="secondary-button" href="/downloads/Fieldwork.html" download="Fieldwork.html">Download browser replay ↓</a></div>
+        <div class="overview-stats" id="overview-stats"><div><span class="stat-value">40</span><span>fields in the queue</span></div><div><span class="stat-value">4</span><span>self-propelled rigs</span></div><div><span class="stat-value">6</span><span>applicators</span></div><p>Illustrative fields, weather and rules.<br>Every decision stays with the manager.</p></div>
+        <div class="planning-grid">
+          <section class="map-panel" aria-label="Field map">
+            <div class="panel-heading"><div><h2>The day at a glance</h2><span id="map-subtitle">Your fields, with the selected plan overlaid</span></div><div class="map-mode-switch" role="group" aria-label="Field view"><button data-map-mode="map" class="active" aria-pressed="true">Fleet map</button><button data-map-mode="3d" aria-pressed="false">3D simulation</button><button data-map-mode="2d" aria-pressed="false">Field layout</button></div></div>
+            <div id="fleet-map-panel" class="fleet-map-panel"><div id="fleet-map-stage" class="fleet-map-stage" aria-label="Interactive fleet map with simulated sprayer positions"></div></div>
+            <div id="simulation-panel" class="simulation-panel" hidden><div id="simulation-stage" class="simulation-stage" aria-label="Interactive 3D preview of synthetic fields and sprayer routes"><div class="scene-loading">Preparing the 3D fields…</div></div><div class="simulation-hud"><span><i></i>Preview only</span><strong id="simulation-time">8:00 am</strong><small id="simulation-progress">0 fields replayed</small></div><span class="simulation-gesture">Drag to orbit · Scroll to zoom</span></div>
+            <div class="simulation-toolbar is-map" id="simulation-toolbar"><span id="map-playback-time" class="map-playback-time">8:00 am</span><button id="simulation-play" class="simulation-play" aria-label="Play simulation">▶ Play</button><label class="scrub-label"><span class="sr-only">Simulation time</span><input id="simulation-scrub" type="range" min="480" max="1080" step="1" value="480" aria-label="Simulation time"></label><select id="simulation-speed" aria-label="Playback speed"><option value="5">5 min/s</option><option value="15" selected>15 min/s</option><option value="30">30 min/s</option></select><select id="simulation-view" aria-label="Camera view" hidden><option value="orbit">Orbit</option><option value="top">Overhead</option><option value="follow">Follow a rig</option></select><button id="simulation-reset" class="simulation-reset" aria-label="Reset camera" title="Reset camera">↺</button></div>
+            <div class="map-wrap" id="flat-map" hidden><svg id="field-map" viewBox="0 0 850 420" role="group" aria-label="Illustrative field locations"></svg><div id="field-tooltip" class="field-tooltip" hidden></div><div class="map-compass" aria-hidden="true">N<br>↑</div><div class="map-key"><span><i class="key-planned"></i>Planned</span><span><i class="key-deferred"></i>Deferred</span><span><i class="key-wet"></i>Wet</span><span><i class="key-priority"></i>Priority</span></div></div><div class="mobile-field-picker"><label for="field-picker">Inspect a field</label><select id="field-picker"><option value="">Choose a field</option></select></div>
+            <div class="weather-strip"><div class="weather-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 14a4 4 0 1 1 1-8 6 6 0 0 1 11 3 3 3 0 0 1 0 6H7M8 18l-1 3M13 18l-1 3M18 18l-1 3"/></svg><div><strong id="rain-label">Rain arrives at 2:00 pm</strong><span id="wind-label">Forecast is simulated</span></div></div><div id="weather-hours" class="weather-hours"></div></div>
+          </section>
+          <section class="update-panel" aria-labelledby="update-title">
+            <div class="update-title"><h2 id="update-title">What changed?</h2><span class="live-dot"></span></div><p>Try a disruption. Rebuild the day.</p>
+            <div class="scenario-list" role="group" aria-label="Simulated disruption">
+              <button data-scenario="storm" class="scenario"><span class="scenario-icon">☂</span><span><strong>Rain moves up</strong><small>The dry window shrinks</small></span><span class="radio-indicator"></span></button>
+              <button data-scenario="breakdown" class="scenario"><span class="scenario-icon">⚙</span><span><strong>A rig breaks down</strong><small>Rig 3 unavailable until 2 pm</small></span><span class="radio-indicator"></span></button>
+              <button data-scenario="wet" class="scenario"><span class="scenario-icon">≈</span><span><strong>Fields turn wet</strong><small>Hold saturated fields</small></span><span class="radio-indicator"></span></button>
+              <button data-scenario="wind" class="scenario"><span class="scenario-icon">≋</span><span><strong>Wind picks up</strong><small>Exceeds the demo wind limit</small></span><span class="radio-indicator"></span></button>
+              <button data-scenario="baseline" class="scenario active"><span class="scenario-icon">☀</span><span><strong>A clear workday</strong><small>Start with the original conditions</small></span><span class="radio-indicator"></span></button>
+            </div>
+            <details class="message-input"><summary>Or add a crew update</summary><label for="crew-message">Demo message parser</label><textarea id="crew-message" rows="2" placeholder="rig 3 hydraulic leak, down till 2pm"></textarea><button id="parse-message" class="text-button">Review update</button><div id="parsed-update" class="parsed-update" hidden></div><p class="micro-copy">Pattern parser; Gemini is not connected.</p></details>
+            <button id="replan-button" class="primary-button"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M15 6a6 6 0 1 0 1 7M15 2v5h-5"/></svg><span>Replan the day</span></button><div class="update-footnote" id="update-footnote" role="status">Uses only the simulated inputs shown here.</div>
+          </section>
+        </div>
+
+        <div id="plan-agent-content"></div>
+        <details id="plan-feedback-details" class="plan-feedback-details"><summary>Talk to the planning agent<span>Feedback and revision history</span></summary><div id="plan-feedback-slot"><p id="plan-feedback-empty" hidden>There is no proposal to revise yet. Review the conditions and replan; the agent will keep the fleet unchanged if no feasible work is found.</p></div></details>
+
+        <section class="options-section" aria-labelledby="options-title"><div class="section-heading"><div><h2 id="options-title">Your next best moves</h2><p id="results-subtitle">Feasible schedules. Clear trade-offs. Your call.</p></div><label class="priority-control">Rank by<select id="priority"><option value="balanced">Balanced priorities</option><option value="acres">Total acreage</option><option value="cost">Estimated cost</option><option value="buffer">Rain buffer</option></select></label></div><div id="stale-banner" class="stale-banner" role="status" hidden>Inputs changed. Replan to review and approve a current schedule.</div><div id="options" class="options-grid" aria-live="polite"><div class="loading-state">Building feasible plans…</div></div><div id="result-notes" class="result-notes"></div></section>
+
+        <section class="schedule-section" id="schedule-section" hidden><div class="section-heading"><div><h2 id="schedule-title">Selected schedule</h2><p id="schedule-subtitle"></p></div><div class="schedule-actions"><button id="open-fleet" class="secondary-button">Fleet queues &amp; job progress</button><button id="download-csv" class="secondary-button">Export crew sheet <span aria-hidden="true">↓</span></button></div></div><div class="timeline-scroll"><div id="timeline" class="timeline"></div></div><details class="deferred-details"><summary id="deferred-summary">Deferred fields</summary><div id="deferred-list" class="deferred-list"></div></details><details class="cost-details"><summary>How this estimate is calculated</summary><div id="cost-details"></div></details></section>
+      </section>
+
+      <section id="farm-view" class="view" hidden><div id="farm-content"></div></section>
+      <section id="disruptions-view" class="view" hidden><div id="disruptions-content" aria-live="polite"></div><div id="disruption-feedback-slot"><div id="proposal-feedback-content"></div></div></section>
+      <section id="fleet-view" class="view" hidden><div id="fleet-content" aria-live="polite"></div><details class="fleet-crew-details"><summary>Applicators and equipment details</summary><div id="crew-content"></div></details></section>
+      <section id="assumptions-view" class="view" hidden><div class="section-heading"><div><h2>Behind the plan</h2><p>What this prototype does, and what still needs validation.</p></div></div><div class="assumption-grid"><article class="info-panel"><h3>Working in this demo</h3><ul><li>OR-Tools selects compatible, feasible candidate routes.</li><li>Each option has a computed schedule, cost and labor estimate.</li><li>3D playback previews travel, spraying, weather and field progress without dispatching a rig.</li><li>The portable replay runs in an existing browser without installation.</li><li>Field windows, rainfast periods, wind, wetness and fixed crew constraints are checked.</li><li>A manager can approve a current plan locally and export review files.</li></ul></article><article class="info-panel"><h3>Planned integrations</h3><ul><li>Gemini for proposed updates and grounded explanations.</li><li>WHIN / Purdue Mesonet observations and NWS forecasts.</li><li>Product-specific, reviewed application rules and road travel times.</li><li>SMS delivery and machine-specific ISOXML validation.</li></ul></article></div><article class="info-panel model-assumptions"><h3>Model assumptions</h3><ul id="assumption-list"></ul><p>“Optimal” means optimal within the generated candidate routes. A rain buffer is the time between the end of the required dry period and modeled rain. It is not a runoff estimate, a safety guarantee or a probability.</p></article><article class="pilot-callout"><div><h3>The first pilot</h3><p>One Indiana co-op. One season’s spray log, with time-stamped dispatch changes and completions. Replay disrupted days against the original schedule before any field deployment.</p></div><span>Observe → Replay → Validate</span></article></section>
+    </main>
+    <footer class="app-footer"><span>Fieldwork is a planning prototype. No added farm hardware.</span><span>Synthetic data · Local approval · No live dispatch</span></footer>
+    <div class="approval-bar" id="approval-bar" hidden><div><span class="approval-state" id="approval-state">Ready for your review</span><strong id="approval-summary"></strong></div><button id="approve-button" class="primary-button">Review &amp; approve <span aria-hidden="true">↗</span></button></div>
+  </div>
+  <dialog id="approval-dialog"><form method="dialog"><div class="dialog-top"><span class="dialog-icon">✓</span><button value="cancel" class="icon-button" aria-label="Close">×</button></div><h2>Put this plan on the board?</h2><p id="dialog-summary"></p><div id="dialog-plan-actions"></div><div class="approval-notice"><strong>This is a local demo approval.</strong><p>No texts will be sent. No equipment will receive task files. The approved schedule can be downloaded for review.</p></div><div id="dialog-error" class="error-banner" hidden></div><div class="dialog-actions"><button value="cancel" class="secondary-button">Keep reviewing</button><button type="button" id="confirm-approval" class="primary-button">Approve fleet plan</button></div></form></dialog>
+  <div id="toast" class="toast" role="status" hidden></div>
+  <dialog id="incident-report-dialog" class="incident-report-dialog" aria-labelledby="incident-report-title">
+    <form id="incident-report-form">
+      <div class="dialog-top"><span>Fleet report</span><button type="button" class="icon-button" id="close-incident-report" aria-label="Close report">×</button></div>
+      <h2 id="incident-report-title">Report a disruption</h2>
+      <p>Record what the operator sees. This demo adds the report to this browser immediately; no live fleet feed is connected.</p>
+      <label>Report type<select id="incident-type"><option value="breakdown">Sprayer breakdown</option><option value="wet">Field too wet</option><option value="storm">Rain arriving sooner</option><option value="wind">High wind</option></select></label>
+      <label id="incident-rig-label">Reporting sprayer<select id="incident-rig"></select></label>
+      <label id="incident-field-label" hidden>Affected field<select id="incident-field"></select></label>
+      <label id="incident-time-label"><span id="incident-time-title">Unavailable until</span><input id="incident-time" type="time" min="08:00" max="20:00" value="14:00"></label>
+      <label id="incident-wind-label" hidden>Wind speed (mph)<input id="incident-wind" type="number" min="1" max="60" step="1" value="18"></label>
+      <label>Operator note<textarea id="incident-message" rows="3" maxlength="1000" placeholder="Hydraulic leak. Waiting on a repair."></textarea></label>
+      <p class="incident-report-note">The selected fields above drive the response. Extra details in the note are saved for review.</p>
+      <p id="incident-report-error" class="error-banner" role="alert" hidden></p>
+      <div class="dialog-actions"><button type="button" class="secondary-button" id="cancel-incident-report">Cancel</button><button type="submit" class="primary-button">Add fleet report</button></div>
+    </form>
+  </dialog>
+</body>
+</html>

@@ -1,0 +1,43 @@
+const checks=[];
+const check=(v,label)=>{if(!v)throw new Error(label);checks.push(label);};
+const waitFor=async(fn)=>{for(let i=0;i<300;i++){if(fn())return;await new Promise(r=>setTimeout(r,50));}throw new Error('UI timeout');};
+const click=sel=>{const el=document.querySelector(sel);if(!el||el.disabled)throw new Error('Unavailable '+sel);el.click();};
+const fill=(sel,text)=>{const el=document.querySelector(sel);el.value=text;el.dispatchEvent(new Event('input',{bubbles:true}));};
+await waitFor(()=>state.result&&!state.busy);
+click('[data-view="farm"]');click('[data-farm-action="restart"]');
+const answers=['Orchard Creek Test Farm','West Lafayette, Indiana','North Forty, 40 acres, corn, north, priority\nCreek Field, 50 acres, soybeans, east\nWest Ridge, 70 acres, corn, west\nSouth Lot, 55 acres, soybeans, south\nHome Field, 35 acres, corn, central\nWet Bottom, 25 acres, soybeans, east, hold','Green Sprayer, 80 acres/hour\nBlue Sprayer, 75 acres/hour\nGold Sprayer, 85 acres/hour\nRed Sprayer, 80 acres/hour','Alex, standard+special\nRiley, standard\nSam, standard\nCasey, standard\nJamie, standard\nTaylor, standard','9am–7pm','90 minutes dry, 15 mph','Use the eastern gate at Creek Field.','balanced'];
+for(let i=0;i<answers.length;i++){
+  if(i===2){fill('#farm-chat-answer','North Forty is big');click('.farm-chat-composer button[type="submit"]');check(state.onboarding.getState().draft.step===2,'Ambiguous field description stays at the same step');check(document.querySelector('#farm-chat-answer').getAttribute('aria-invalid')==='true','Validation error is accessible');}
+  fill('#farm-chat-answer',answers[i]);click('.farm-chat-composer button[type="submit"]');
+}
+check(!!document.querySelector('.farm-profile-review'),'Nine answers lead to editable profile review');
+check(state.meta.fields.length===40,'Unconfirmed onboarding does not change the demo');
+click('[data-farm-action="apply"]');await waitFor(()=>!state.busy&&!state.profileBusy&&!state.onboarding.applying);
+check(state.meta.fields.length===6&&state.activeProfile?.farm_name==='Orchard Creek Test Farm','Confirmed profile replaces the planner roster');
+check(state.meta.rigs.length===4&&state.meta.crew.length===6,'Four sprayers and six applicators persist in the profile');
+check(state.meta.now===540&&state.meta.workday.end===1140,'Planner uses the entered workday');
+check(state.result.profile_id===state.meta.profile_id,'Result belongs to the exact farm configuration');
+check(state.result.plans.every(p=>p.schedule.every(j=>j.field_id!=='F06')),'Profile field hold is enforced by the solver');
+check(!state.fleetStore.snapshot().active,'Applying a farm never approves its generated plan');
+click('[data-view="disruptions"]');click('[data-disruption-scenario="baseline"]');click('[data-disruption-action="analyze"]');await waitFor(()=>state.disruptionPhase==='ready');
+click('[data-disruption-action="approve"]');check(document.querySelector('#approval-dialog').open,'Plan requires an explicit approval dialog');click('#confirm-approval');await waitFor(()=>state.disruptionPhase==='approved');
+const oldPlan=JSON.stringify(state.fleetStore.snapshot().active);
+fill('[data-feedback-draft]','Hold Creek Field\nKeep Gold Sprayer out');click('[data-feedback-action="review"]');
+check(state.feedback.review.supported,'Feedback resolves custom field and sprayer names');
+check(state.feedback.review.constraints.excluded_fields.includes('F02')&&state.feedback.review.constraints.unavailable_rigs.includes('R3'),'Feedback interpretation contains exact known IDs');
+check(JSON.stringify(state.fleetStore.snapshot().active)===oldPlan,'Reviewing feedback leaves approved queues unchanged');
+click('[data-feedback-action="apply"]');await waitFor(()=>state.disruptionPhase==='ready'&&!state.busy);
+check(state.result.plans.every(p=>p.schedule.every(j=>j.field_id!=='F02'&&j.rig_id!=='R3')),'Reviewed feedback restrictions are enforced in every revised option');
+check(JSON.stringify(state.fleetStore.snapshot().active)===oldPlan,'Replanning feedback does not silently activate the revision');
+fill('[data-feedback-draft]','Prioritize Creek Field');click('[data-feedback-action="review"]');check(!state.feedback.review.supported,'Cross-review hold and priority conflict asks for correction');
+fill('[data-feedback-draft]','Take the secret road near my uncle');click('[data-feedback-action="review"]');check(!state.feedback.review.supported,'Unsupported feedback is retained as a note instead of an invented constraint');
+fill('[data-feedback-draft]','Lower cost');click('[data-feedback-action="review"]');check(state.feedback.review.supported,'Ranking feedback can be reviewed');
+fill('[data-feedback-draft]','More acres');check(document.querySelector('[data-feedback-action="apply"]').disabled,'Editing text invalidates a previous review');
+fill('[data-feedback-draft]','Keep R1 out\nKeep R2 out\nKeep R4 out');click('[data-feedback-action="review"]');click('[data-feedback-action="apply"]');await waitFor(()=>!state.busy&&state.disruptionPhase==='ready');
+check(state.result.plans.length===0,'No available sprayers produces no feasible plan');
+check(!document.querySelector('[data-feedback-action="clear"]').disabled,'No-plan feedback restrictions can be cleared');
+click('[data-feedback-action="clear"]');click('[data-disruption-action="analyze"]');await waitFor(()=>state.disruptionPhase==='ready');
+check(state.result.plans.length>0,'Clearing feedback recovers feasible plans');
+check(JSON.stringify(state.fleetStore.snapshot().active)===oldPlan,'All feedback steps preserve the human-approved workboard');
+window.__onboardingChecks=checks;
+return {passed:checks.length,checks,profile:state.activeProfile.farm_name};

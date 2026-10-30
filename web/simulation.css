@@ -1,0 +1,9 @@
+/* The viewer is self-contained; its controls are supplied by the host app. */
+.fw3d-root{position:relative;isolation:isolate;width:100%;height:460px;min-height:280px;overflow:hidden;background:#e2ebe3;border-radius:0;touch-action:none}
+.fw3d-canvas{display:block;width:100%;height:100%;cursor:grab;outline-offset:-4px;touch-action:none}
+.fw3d-canvas:active{cursor:grabbing}
+.fw3d-canvas:focus-visible{outline:3px solid #378c80}
+.fw3d-fallback{min-height:280px;height:100%;padding:35px;display:flex;align-items:center;justify-content:center;text-align:center;color:#526a5c;background:#eaf0e5;font:14px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+@media(min-width:1500px){.fw3d-root{height:500px}}
+@media(max-width:650px){.fw3d-root{height:340px;min-height:260px}.fw3d-fallback{font-size:12px;padding:24px}}
+@media(prefers-reduced-motion:reduce){.fw3d-canvas{scroll-behavior:auto}}

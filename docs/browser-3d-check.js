@@ -1,0 +1,41 @@
+// Run with gstack browse eval on either the local app or portable file.
+await new Promise((resolve,reject)=>{const until=Date.now()+15000;const timer=setInterval(()=>{if(typeof state!=='undefined'&&state.sim&&state.result&&!state.busy){clearInterval(timer);resolve();}else if(Date.now()>until){clearInterval(timer);reject(new Error('3D initialization timed out'));}},30);});
+const checks=[];
+const assert=(value,name)=>{if(!value)throw new Error(name);checks.push(name);};
+const get=selector=>document.querySelector(selector);
+const wait=async(predicate)=>{const until=Date.now()+15000;while(!predicate()){if(Date.now()>until)throw new Error('Operation timed out');await new Promise(r=>setTimeout(r,30));}};
+get('[data-map-mode="3d"]').click();
+assert(state.sim.available&&get('#simulation-stage canvas'),'A real WebGL scene is available');
+assert(!state.sim.playing,'Preview starts paused');
+const initial=state.sim.getSnapshot();
+const authoritative=JSON.stringify(state.result);
+get('#simulation-scrub').value=620;get('#simulation-scrub').dispatchEvent(new Event('input',{bubbles:true}));
+assert(get('#simulation-time').textContent==='10:20 am','Scrubber controls the displayed time');
+const later=state.sim.getSnapshot();
+assert(JSON.stringify(initial.rigs)!==JSON.stringify(later.rigs),'Rig positions and activity advance with schedule time');
+assert(JSON.stringify(state.result)===authoritative,'Playback never changes the authoritative plan');
+get('#simulation-play').click();await new Promise(r=>setTimeout(r,180));get('#simulation-play').click();
+assert(state.sim.time>620&&!state.sim.playing,'Play advances time and pause stops it');
+get('#simulation-view').value='top';get('#simulation-view').dispatchEvent(new Event('change'));
+assert(state.sim.view==='top','Overhead camera works');
+get('#simulation-view').value='follow';get('#simulation-view').dispatchEvent(new Event('change'));
+assert(state.sim.view==='follow','Follow camera works');
+get('#simulation-reset').click();assert(state.sim.view==='orbit','Reset restores orbit camera');
+get('#simulation-play').click();get('[data-map-mode="2d"]').click();
+assert(!state.sim.playing&&get('#simulation-panel').hidden&&!get('#flat-map').hidden,'Switching to 2D pauses playback');
+assert(get('#simulation-play').textContent.includes('Play'),'Paused playback button stays accurate');
+get('[data-map-mode="3d"]').click();
+get('[data-scenario="wet"]').click();get('#replan-button').click();await wait(()=>!state.busy);
+assert(state.sim.conditions.wet_fields.length===6,'Changing scenario updates 3D field conditions');
+assert(!state.sim.playing&&state.sim.time===480,'A new plan resets preview time without dispatch');
+if(window.FIELDWORK_REPLAY){
+  assert(get('.demo-pill').textContent.includes('Offline'),'Portable edition is labeled offline');
+  assert(get('#runtime-note').textContent.includes('prerecorded'),'Portable results are labeled prerecorded');
+  assert(get('.message-input').hidden,'Unavailable custom updates are not offered offline');
+  assert(!performance.getEntriesByType('resource').some(r=>/^https?:/.test(r.name)),'Portable file requires no network assets or API');
+  assert(get('#replan-button').textContent.includes('Load scenario'),'Offline action does not claim fresh solving');
+}
+get('[data-scenario="storm"]').click();get('#replan-button').click();await wait(()=>!state.busy);
+get('#simulation-scrub').value=610;get('#simulation-scrub').dispatchEvent(new Event('input'));
+assert(!get('#error-banner').textContent,'No application errors during 3D interaction');
+return {passed:checks.length,checks,edition:window.FIELDWORK_REPLAY?'portable':'solver'};

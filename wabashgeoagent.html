@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WabashGeoAgent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root{--bg:#0f1115;--panel:#161920;--panel2:#1d212a;--line:#2a2f3a;--fg:#e8eaef;--muted:#9aa3b2;--accent:#8ab4f8;--ok:#81c995;--warn:#fdd663;--bad:#f28b82;--gem:#c58af9}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font:14px/1.45 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+header{display:flex;align-items:center;gap:12px;padding:8px 14px;border-bottom:1px solid var(--line);background:var(--panel);flex-wrap:wrap}
+.logo{width:32px;height:32px;border-radius:9px;background:linear-gradient(120deg,#4285f4,#9b72cb 55%,#d96570);display:grid;place-items:center;font-weight:700;color:#fff;font-size:15px;flex-shrink:0}
+.title b{display:block;font-size:15px;letter-spacing:-.01em}
+.title span{font-size:11.5px;color:var(--muted)}
+.clock{font-family:"JetBrains Mono",monospace;font-size:20px;font-weight:600;padding:3px 10px;border-radius:8px;background:var(--panel2);border:1px solid var(--line)}
+.clock small{font-size:11px;color:var(--muted);font-weight:500;margin-right:6px}
+.seg{display:flex;border:1px solid var(--line);border-radius:999px;background:var(--panel2);padding:2px}
+.seg button{border:0;background:transparent;padding:4px 10px;border-radius:999px;font-size:12px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:rgba(138,180,248,.18);color:var(--accent)}
+.btn{border:1px solid var(--line);background:var(--panel2);padding:6px 12px;border-radius:999px;font-size:12.5px;font-weight:500}
+.btn:hover{border-color:#3d4452}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{border:0;background:linear-gradient(110deg,#4285f4,#9b72cb 60%,#d96570);color:#fff;font-weight:600}
+.chip{font-size:11px;padding:3px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.spacer{flex:1}
+main{flex:1;min-height:0;display:grid;grid-template-columns:300px minmax(0,1fr) 400px}
+aside{overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:12px;min-height:0}
+aside::-webkit-scrollbar,#console::-webkit-scrollbar{width:8px}aside::-webkit-scrollbar-thumb,#console::-webkit-scrollbar-thumb{background:#2c313c;border-radius:8px}
+#left{border-right:1px solid var(--line)}#right{border-left:1px solid var(--line)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px}
+.label{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.kpi{background:var(--panel2);border-radius:10px;padding:8px 10px}
+.kpi b{display:block;font-size:19px;font-weight:600}
+.kpi span{font-size:11px;color:var(--muted)}
+.rig{display:flex;gap:9px;padding:8px 0;border-top:1px solid var(--line)}
+.rig:first-of-type{border-top:0}
+.dot{width:10px;height:10px;border-radius:3px;margin-top:4px;flex-shrink:0}
+.rig .st{font-size:12px;color:var(--muted)}
+.q{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.q i{font-style:normal;font-family:"JetBrains Mono",monospace;font-size:10.5px;padding:1px 5px;border-radius:5px;background:var(--panel2);border:1px solid var(--line)}
+.q i.cur{border-color:var(--accent);color:var(--accent)}
+.inject{display:flex;flex-direction:column;gap:6px}
+.inject button{text-align:left;border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:8px 10px;font-size:12.5px;display:flex;gap:8px;align-items:center}
+.inject button:hover{border-color:#4a5262}
+.inject button:disabled{opacity:.45;cursor:not-allowed}
+.log{font-size:12px;display:flex;flex-direction:column;gap:6px}
+.log div{padding-left:10px;border-left:2px solid var(--line);color:var(--muted)}
+.log div b{color:var(--fg);font-weight:500}
+.foot{font-size:11px;color:var(--muted);line-height:1.5}
+#stage{position:relative;min-width:0;min-height:0;background:#bcd3e4}
+#c{display:block;width:100%;height:100%;cursor:grab}
+#c:active{cursor:grabbing}
+#labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.fl{position:absolute;transform:translate(-50%,-100%);font-size:11px;line-height:1.25;background:rgba(15,17,21,.78);color:#fff;padding:3px 7px;border-radius:7px;white-space:nowrap;border:1px solid rgba(255,255,255,.12)}
+.fl b{font-weight:600}.fl em{font-style:normal;color:#b9c3d3}
+.fl.done{border-color:rgba(129,201,149,.7)}.fl.wash{border-color:#f28b82;background:rgba(90,20,20,.85)}.fl.wet{border-color:#8ab4f8}.fl.blocked{border-color:#fdd663}
+.rl{position:absolute;transform:translate(-50%,-100%);font:600 10.5px "JetBrains Mono",monospace;color:#111;padding:1px 6px;border-radius:5px;white-space:nowrap}
+.hud{position:absolute;display:flex;gap:6px;flex-wrap:wrap;pointer-events:none}
+.hud .pill{background:rgba(15,17,21,.82);border:1px solid rgba(255,255,255,.12);color:#fff;font-size:12px;padding:5px 10px;border-radius:999px}
+#legend{left:10px;bottom:10px;flex-direction:column;gap:4px;background:rgba(15,17,21,.8);border:1px solid rgba(255,255,255,.12);padding:8px 10px;border-radius:10px;font-size:11.5px;color:#e8eaef}
+#legend span{display:flex;align-items:center;gap:6px}
+#legend i{width:12px;height:12px;border-radius:3px;display:inline-block}
+#banner{position:absolute;left:50%;top:14px;transform:translateX(-50%);width:min(560px,92%);background:rgba(15,17,21,.92);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:none;pointer-events:auto}
+#banner h3{margin:0 0 8px;font-size:15px}
+#banner table{width:100%;border-collapse:collapse;font-size:12.5px}
+#banner td,#banner th{padding:4px 6px;text-align:right;border-top:1px solid var(--line)}
+#banner td:first-child,#banner th:first-child{text-align:left}
+#banner th{color:var(--muted);font-weight:500;border-top:0}
+.agenthead{display:flex;align-items:center;gap:8px}
+.agenthead b{font-size:14px}
+.gate{font-size:11.5px;color:var(--warn);background:rgba(253,214,99,.08);border:1px solid rgba(253,214,99,.3);border-radius:8px;padding:6px 8px;margin-top:8px}
+#console{display:flex;flex-direction:column;gap:6px;font-size:12px;max-height:44vh;overflow-y:auto}
+.cl{padding:6px 8px;border-radius:8px;background:var(--panel2);border:1px solid var(--line)}
+.cl.th{background:transparent;border:0;border-left:2px solid var(--gem);border-radius:0;color:#d7c3f2;font-style:italic;padding:2px 8px}
+.cl.sys{background:transparent;border:0;color:var(--muted);padding:0 2px;font-family:"JetBrains Mono",monospace;font-size:11px}
+.cl .fn{font-family:"JetBrains Mono",monospace;color:var(--accent);font-size:11.5px;word-break:break-all}
+.cl .args{font-family:"JetBrains Mono",monospace;color:#c8ced8;font-size:11px;word-break:break-all}
+.cl .ret{margin-top:3px;color:var(--ok)}
+.cl .lat{float:right;color:var(--muted);font-family:"JetBrains Mono",monospace;font-size:10.5px}
+.spin{display:inline-block;width:10px;height:10px;border:2px solid var(--accent);border-right-color:transparent;border-radius:50%;animation:sp .8s linear infinite;vertical-align:-1px;margin-right:4px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.opt{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px}
+.opt.best{border-color:rgba(129,201,149,.65);box-shadow:0 0 0 1px rgba(129,201,149,.25) inset}
+.opt h4{margin:0;font-size:14px;display:flex;gap:8px;align-items:center}
+.rank{font:600 11px "JetBrains Mono",monospace;padding:2px 6px;border-radius:6px;background:var(--panel2);border:1px solid var(--line)}
+.opt.best .rank{background:rgba(129,201,149,.15);border-color:rgba(129,201,149,.5);color:var(--ok)}
+.opt p{margin:6px 0 8px;font-size:12.5px;color:#c9cfd9}
+.mg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.mg div{background:var(--panel2);border-radius:8px;padding:6px 8px}
+.mg b{display:block;font-size:14px}.mg span{font-size:10.5px;color:var(--muted)}
+.delta{font-size:12.5px;margin-top:8px;font-weight:600}
+.opt details{margin-top:6px;font-size:11.5px;color:var(--muted)}
+.opt details summary{cursor:pointer}
+.opt details div{font-family:"JetBrains Mono",monospace;font-size:11px;margin-top:4px;line-height:1.6}
+.opt .acts{display:flex;gap:8px;margin-top:10px}
+.placeholder{color:var(--muted);font-size:12.5px;text-align:center;padding:18px 8px}
+#toasts{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;gap:8px;z-index:50}
+.toast{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--ok);border-radius:10px;padding:10px 12px;font-size:12.5px;max-width:380px;box-shadow:0 10px 30px rgba(0,0,0,.4);transition:.25s;opacity:0;transform:translateY(8px)}
+.toast.show{opacity:1;transform:none}
+#settings{position:absolute;right:14px;top:56px;z-index:40;width:320px;display:none}
+#settings input{width:100%;margin-top:4px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 9px;color:var(--fg);font-size:12.5px}
+@media (max-width:1150px){body{height:auto;overflow:auto}main{grid-template-columns:1fr}#stage{height:62vh;order:-1}#left,#right{border:0}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">W</div>
+  <div class="title"><b>WabashGeoAgent</b><span>Co-op sprayer, crew &amp; field re-planning · Gemini agent · Tippecanoe Co., Indiana</span></div>
+  <div class="clock" id="clock"><small>Tue Jun 16</small>07:00</div>
+  <button class="btn" id="playBtn">▶ Play</button>
+  <div class="seg" id="speedSeg"><button data-s="1" aria-pressed="true">1×</button><button data-s="4" aria-pressed="false">4×</button><button data-s="10" aria-pressed="false">10×</button></div>
+  <div class="seg" id="viewSeg"><button data-v="crop" aria-pressed="true">Spray status</button><button data-v="moist" aria-pressed="false">Soil moisture</button><button data-v="radar" aria-pressed="false">Radar</button></div>
+  <div class="spacer"></div>
+  <span class="chip" id="modeChip">Simulated data · real planning math</span>
+  <button class="btn" id="setBtn">Gemini key</button>
+  <button class="btn" id="resetBtn">Reset</button>
+  <button class="btn primary" id="demoBtn">▶ Guided demo</button>
+</header>
+<div class="card" id="settings">
+  <p class="label">Live Gemini (optional)</p>
+  <div class="foot">With a Google AI Studio key, step 5 (the trade-off explanations) is written by Gemini using structured output. The key stays in this page’s memory and is sent only to generativelanguage.googleapis.com.</div>
+  <input id="apiKey" type="password" placeholder="AI Studio API key" autocomplete="off">
+  <input id="modelId" value="gemini-2.5-flash" class="mono">
+</div>
+<main>
+  <aside id="left">
+    <div class="card">
+      <p class="label">Co-op board · Wabash Valley Co-op (fictional)</p>
+      <div class="kpis">
+        <div class="kpi"><b id="kSafe">0</b><span>acres sprayed safely</span></div>
+        <div class="kpi"><b id="kLeft">0</b><span>acres still to spray</span></div>
+        <div class="kpi"><b id="kWash" style="color:var(--bad)">0</b><span>acres at wash-off risk</span></div>
+        <div class="kpi"><b id="kWet" style="color:var(--accent)">0</b><span>acres rained out</span></div>
+      </div>
+    </div>
+    <div class="card"><p class="label">Rigs &amp; crews</p><div id="rigs"></div></div>
+    <div class="card">
+      <p class="label">Inject a disruption</p>
+      <div class="inject">
+        <button data-ev="storm">⛈️ Storm front speeds up</button>
+        <button data-ev="breakdown">🔧 A sprayer breaks down</button>
+        <button data-ev="moisture">💧 Subsoil moisture spike</button>
+      </div>
+    </div>
+    <div class="card"><p class="label">Decision log</p><div class="log" id="log"><div>07:00 · <b>Morning plan loaded</b> from the co-op spreadsheet.</div></div></div>
+    <div class="foot">Prototype. Fields, crews and sensor values are simulated. Cost basis: Purdue 2025 Indiana Farm Custom Rates (self-propelled spraying ≈ $8.39/ac). In production: soil data from WHIN / Purdue Mesonet, forecasts from the NWS API, schedules from the co-op ERP, optimization with Google OR-Tools.</div>
+  </aside>
+  <section id="stage">
+    <canvas id="c"></canvas>
+    <div id="labels"></div>
+    <div class="hud" style="left:10px;top:10px"><span class="pill" id="stormPill">Storm front ETA 15:30</span></div>
+    <div class="hud" id="legend"></div>
+    <div id="banner"></div>
+  </section>
+  <aside id="right">
+    <div class="card">
+      <div class="agenthead"><span class="logo" style="width:24px;height:24px;font-size:12px">G</span><b>Gemini planning agent</b><span class="spacer"></span><span class="chip" id="agentState">Watching</span></div>
+      <div class="gate">Recommends, never dispatches. Equipment moves only after a co-op manager approves a plan.</div>
+    </div>
+    <div class="card"><p class="label">Function-calling trace</p><div id="console"><div class="placeholder">Press <b>▶ Guided demo</b> for the 60-second storyline, or press Play and inject a disruption yourself.</div></div></div>
+    <div id="options" style="display:flex;flex-direction:column;gap:10px"></div>
+  </aside>
+</main>
+<div id="toasts"></div>
+<script>
+'use strict';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=n=>Math.round(n).toLocaleString('en-US');
+const money=n=>(n<0?'−$':'$')+fmt(Math.abs(n));
+const hhmm=m=>{m=Math.round(m);const h=Math.floor(m/60),mm=m%60;return String(h).padStart(2,'0')+':'+String(mm).padStart(2,'0')};
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+// ---------- model ----------
+const DAY_START=7*60, DAY_END=19*60, OT_START=17*60;
+const RATE=55;            // acres per hour per self-propelled rig
+const ROAD=2.5;           // world units per minute on roads (1 unit = 0.1 mi)
+const DT=0.5;             // sim step, minutes
+const CUSTOM_RATE=8.39, CALLOUT=250, LABOR=38, OT_PREM=19, DELAY_RISK=4, MILE=2.1;
+const DEFER_COST=CUSTOM_RATE+DELAY_RISK;
+const TRAFFIC_LIMIT=0.38;
+const ROADS_Z=[-33,-11,11,33];
+const DEPOT={x:-62,z:33};
+const PRODUCTS={H:{name:'Herbicide',rainfast:2,cost:18},F:{name:'Fungicide',rainfast:1,cost:24},I:{name:'Insecticide',rainfast:1,cost:12}};
+const FIELD_DEFS=[['F1','Hartman N',110,'H',.29],['F2','Wea Plains',95,'F',.27],['F3','Dayton Rd',130,'H',.31],['F4','Monitor 2',80,'I',.26],
+['F5','Creekside',120,'F',.34],['F6','Sugar Creek',105,'H',.35],['F7','Odell E',90,'F',.33],['F8','Klondike',140,'H',.28],
+['F9','Shadeland',85,'I',.30],['F10','Lindell 40',115,'H',.34],['F11','Big Pine',100,'F',.29],['F12','Hartman S',125,'H',.27]];
+const COLS=[-36,-12,12,36], ROWS=[-22,0,22];
+const RIG_DEFS=[{id:'R1',hex:'#f4b400'},{id:'R2',hex:'#4c8df6'},{id:'R3',hex:'#e8613c'}];
+const CUSTOM_RIG={id:'R4',hex:'#b47be8',custom:true};
+const MORNING={R1:['F1','F2','F3','F4'],R2:['F8','F7','F6','F5'],R3:['F9','F10','F11','F12']};
+
+function mkRig(def,from){return{id:def.id,hex:def.hex,custom:!!def.custom,x:DEPOT.x,z:DEPOT.z,heading:0,state:'idle',target:null,path:[],queue:[],downUntil:0,availableFrom:from,workMin:0,otMin:0,miles:0,customAcres:0}}
+function newState(){
+  const fields=FIELD_DEFS.map((d,i)=>{const p=PRODUCTS[d[3]];return{id:d[0],name:d[1],acres:d[2],prod:d[3],rainfast:p.rainfast,cost:p.cost,x:COLS[i%4],z:ROWS[Math.floor(i/4)],w:20,d:18,sprayed:0,doneAt:null,wet:false,washoff:0,moisture:d[4],blockedUntil:0}});
+  const rigs=RIG_DEFS.map(r=>{const g=mkRig(r,DAY_START);g.queue=[...MORNING[r.id]];return g});
+  return{t:DAY_START,storm:{arr:15.5*60,speed:.55,band:28},fields,rigs};
+}
+const fieldById=(st,id)=>st.fields.find(f=>f.id===id);
+const frontX=(st,t)=>-60+st.storm.speed*(t-st.storm.arr);
+const rainingAt=(st,x,t)=>{const fx=frontX(st,t);return x<=fx&&x>=fx-st.storm.band};
+const rainArrival=(st,f)=>st.storm.arr+((f.x-f.w/2)+60)/st.storm.speed;
+const nearest=(arr,v)=>arr.reduce((a,b)=>Math.abs(b-v)<Math.abs(a-v)?b:a);
+function sweepPoint(f){const nL=6,p=clamp(f.sprayed/f.acres,0,.9999);const lane=Math.floor(p*nL),fr=p*nL-lane;const x0=f.x-f.w/2+1.2,x1=f.x+f.w/2-1.2;return{x:lane%2===0?x0+(x1-x0)*fr:x1-(x1-x0)*fr,z:f.z-f.d/2+1.5+lane*(f.d-3)/(nL-1)}}
+function route(r,f){const rz=nearest(ROADS_Z,r.z),ex=f.x-12,s=sweepPoint(f);return[{x:r.x,z:rz},{x:ex,z:rz},{x:ex,z:s.z},{x:s.x,z:s.z}]}
+function pathLen(r){let x=r.x,z=r.z,L=0;for(const p of r.path){L+=Math.hypot(p.x-x,p.z-z);x=p.x;z=p.z}return L}
+function moveAlong(r,dist){while(dist>1e-9&&r.path.length){const p=r.path[0],dx=p.x-r.x,dz=p.z-r.z,d=Math.hypot(dx,dz);if(d<1e-6){r.path.shift();continue}r.heading=Math.atan2(dz,dx);if(d<=dist){r.x=p.x;r.z=p.z;r.path.shift();dist-=d;r.miles+=d*.1}else{r.x+=dx/d*dist;r.z+=dz/d*dist;r.miles+=dist*.1;dist=0}}}
+function pickNext(st,r){
+  const cand=r.queue.map(id=>fieldById(st,id)).filter(f=>f&&f.doneAt==null&&!f.wet&&!st.rigs.some(o=>o!==r&&o.target===f.id));
+  const ok=cand.filter(f=>f.blockedUntil<=st.t);
+  if(ok.length){r.target=ok[0].id;r.path=route(r,ok[0]);r.state='travel'}
+  else if(cand.length){r.state='hold';r.target=null}
+  else{r.state='idle';r.target=null}
+}
+function work(r,st,dt){if(r.custom)return;r.workMin+=dt;if(st.t>OT_START)r.otMin+=dt}
+function step(st,dt){
+  st.t+=dt;const t=st.t;
+  for(const f of st.fields){
+    if(!f.wet&&rainingAt(st,f.x,t)){
+      f.wet=true;f.moisture=Math.max(f.moisture,.44);const win=f.rainfast*60;
+      if(f.doneAt!=null){if(t-f.doneAt<win)f.washoff=f.acres}else if(f.sprayed>0)f.washoff=Math.min(f.sprayed,RATE*win/60);
+    }
+  }
+  for(const r of st.rigs){
+    if(t<r.availableFrom)continue;
+    if(r.state==='down'){if(t<r.downUntil)continue;r.state='idle'}
+    if(r.state==='idle'||r.state==='hold'){pickNext(st,r);if(r.state==='hold'){work(r,st,dt);continue}if(r.state==='idle')continue}
+    if(r.state==='travel'){moveAlong(r,ROAD*dt);work(r,st,dt);if(!r.path.length)r.state='spray';continue}
+    if(r.state==='spray'){
+      const f=fieldById(st,r.target);
+      if(!f||f.wet||f.blockedUntil>t||f.doneAt!=null){r.target=null;r.state='idle';continue}
+      const add=Math.min(RATE/60*dt,f.acres-f.sprayed);f.sprayed+=add;if(r.custom)r.customAcres+=add;work(r,st,dt);
+      const p=sweepPoint(f);if(Math.hypot(p.x-r.x,p.z-r.z)>1e-3)r.heading=Math.atan2(p.z-r.z,p.x-r.x);r.x=p.x;r.z=p.z;
+      if(f.sprayed>=f.acres-1e-6){f.sprayed=f.acres;f.doneAt=t;r.queue=r.queue.filter(id=>id!==f.id);r.target=null;r.state='idle'}
+    }
+  }
+}
+const clone=o=>JSON.parse(JSON.stringify(o));
+function resetCounters(st){for(const r of st.rigs){r.workMin=0;r.otMin=0;r.miles=0;r.customAcres=0}}
+function applyPlan(st,plan){
+  if(plan.extraRig&&!st.rigs.some(r=>r.id==='R4'))st.rigs.push(mkRig(CUSTOM_RIG,st.t+40));
+  for(const r of st.rigs){const q=plan.queues[r.id];if(!q)continue;r.queue=[...q];
+    if(r.target&&!q.includes(r.target)){r.target=null;r.path=[];if(r.state==='travel'||r.state==='spray')r.state='idle'}}
+}
+function project(st,plan){const s=clone(st);resetCounters(s);applyPlan(s,plan);while(s.t<DAY_END)step(s,DT);return s}
+function planCost(s){
+  let wash=0,washC=0,def=0,safe=0;for(const f of s.fields){wash+=f.washoff;washC+=f.washoff*(f.cost+CUSTOM_RATE);def+=f.acres-f.sprayed;safe+=f.sprayed-f.washoff}
+  let w=0,ot=0,mi=0,cust=0,hasC=false;for(const r of s.rigs){w+=r.workMin;ot+=r.otMin;mi+=r.miles;cust+=r.customAcres;if(r.custom)hasC=true}
+  const labor=w/60*LABOR+ot/60*OT_PREM,travel=mi*MILE,custom=hasC?cust*CUSTOM_RATE+CALLOUT:0,deferC=def*DEFER_COST;
+  return{wash,washC,def,deferC,safe,hrs:w/60,ot:ot/60,mi,labor,travel,custom,custAc:cust,total:washC+deferC+labor+travel+custom};
+}
+
+// ---------- planner ----------
+const remaining=st=>st.fields.filter(f=>f.doneAt==null&&!f.wet);
+function rigAvail(st,r){let t=Math.max(st.t,r.availableFrom||0);if(r.state==='down')t=Math.max(t,r.downUntil);return t}
+function greedy(st,rigs,order,stormAware){
+  const est={},q={};for(const r of rigs){est[r.id]={t:rigAvail(st,r),x:r.x,z:r.z};q[r.id]=[]}
+  const pool=order.slice();
+  for(const r of rigs){if(r.target&&r.state!=='down'){const f=fieldById(st,r.target);const i=pool.indexOf(f);if(i>=0){q[r.id].push(f.id);est[r.id].t+=pathLen(r)/ROAD+(f.acres-f.sprayed)/RATE*60;est[r.id].x=f.x;est[r.id].z=f.z;pool.splice(i,1)}}}
+  for(const f of pool){
+    let best=null;
+    for(const r of rigs){const e=est[r.id];const start=Math.max(e.t+(Math.abs(e.x-f.x)+Math.abs(e.z-f.z))/ROAD,f.blockedUntil);const fin=start+(f.acres-f.sprayed)/RATE*60;if(!best||fin<best.fin)best={r,fin}}
+    if(!best)continue;
+    if(stormAware&&(best.fin+f.rainfast*60>rainArrival(st,f)||best.fin>DAY_END))continue;
+    q[best.r.id].push(f.id);est[best.r.id]={t:best.fin,x:f.x,z:f.z};
+  }
+  return q;
+}
+const currentQueues=st=>Object.fromEntries(st.rigs.map(r=>[r.id,[...r.queue]]));
+function strategies(st,kind){
+  const rem=remaining(st),byArr=[...rem].sort((a,b)=>rainArrival(st,a)-rainArrival(st,b));
+  const virt={...mkRig(CUSTOM_RIG,st.t+40)};
+  const P=[];
+  if(kind==='storm'){
+    P.push({key:'race',title:'Race the storm, west to east',idea:'Re-sequence every rig by when rain reaches each field; skip fields that can’t stay dry for their rainfast window.',queues:greedy(st,st.rigs,byArr,true)});
+    const held=new Set(rem.filter(f=>rainArrival(st,f)<st.t+240&&!st.rigs.some(r=>r.target===f.id)).map(f=>f.id));
+    P.push({key:'hold',title:'Hold the west, work the east',idea:'Park every field the storm reaches in the next 4 h until tomorrow; keep rigs busy on the east side.',queues:greedy(st,st.rigs,[...byArr].reverse().filter(f=>!held.has(f.id)),false)});
+    P.push({key:'custom',title:'Race the storm + call a custom applicator',idea:'Same storm-aware sequence with a fourth rig hired at Purdue’s custom rate, on site in ~40 min.',queues:greedy(st,[...st.rigs,virt],byArr,true),extraRig:true});
+  }else if(kind==='breakdown'){
+    const broken=st.rigs.find(r=>r.state==='down');
+    P.push({key:'rebalance',title:`Rebalance ${broken?broken.id:'the'} fields across working rigs`,idea:'Hand the broken rig’s fields to the others, ordered by storm arrival; it rejoins after repair.',queues:greedy(st,st.rigs,byArr,true)});
+    P.push({key:'keep',title:'Wait for the repair',idea:'Keep the current plan; the broken rig resumes its own fields when it’s fixed.',queues:currentQueues(st)});
+    const q=currentQueues(st);if(broken){q.R4=q[broken.id].filter(id=>{const f=fieldById(st,id);return f.doneAt==null&&!f.wet});q[broken.id]=[]}
+    P.push({key:'custom',title:'Custom applicator covers the broken rig',idea:'Hire a fourth rig at the custom rate to take over the broken rig’s list.',queues:q,extraRig:true});
+  }else{
+    const blocked=new Set(rem.filter(f=>f.blockedUntil>st.t).map(f=>f.id));
+    P.push({key:'reseq',title:'Re-sequence around the wet fields',idea:'Move rigs to firm ground now and come back to the wet fields once sensors say they can carry a sprayer.',queues:greedy(st,st.rigs,byArr,true)});
+    P.push({key:'keep',title:'Keep the plan and wait',idea:'Rigs stand by at the wet fields until they dry.',queues:currentQueues(st)});
+    P.push({key:'defer',title:'Push wet fields to tomorrow',idea:'Drop the wet fields from today and run the rest by storm arrival.',queues:greedy(st,st.rigs,byArr.filter(f=>!blocked.has(f.id)),true)});
+  }
+  return P;
+}
+
+// ---------- three.js scene ----------
+let renderer,scene,camera,sun,hemi;const SKY=new THREE.Color(0xbcd3e4),STORMSKY=new THREE.Color(0x5b6573);
+const F3D={},R3D={},S3D={};let cloudGroup,rain,rainData,radarMesh;
+const cam={theta:-.62,phi:.92,r:138,target:new THREE.Vector3(-4,0,4)};
+function cropTex(){const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d');g.fillStyle='#6b5034';g.fillRect(0,0,128,128);for(let y=0;y<128;y+=8){g.fillStyle='#5c9634';g.fillRect(0,y+1,128,5);g.fillStyle='rgba(140,195,80,.55)';for(let x=0;x<128;x+=5)g.fillRect(x,y+1+(x*7)%3,3,2)}const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(2.6,3);return t}
+function radarTex(){const c=document.createElement('canvas');c.width=256;c.height=8;const g=c.getContext('2d');const gr=g.createLinearGradient(0,0,256,0);gr.addColorStop(0,'rgba(60,200,90,0)');gr.addColorStop(.35,'rgba(60,200,90,.8)');gr.addColorStop(.7,'rgba(250,210,40,.9)');gr.addColorStop(.92,'rgba(230,60,40,.95)');gr.addColorStop(1,'rgba(230,60,40,0)');g.fillStyle=gr;g.fillRect(0,0,256,8);return new THREE.CanvasTexture(c)}
+function rigMesh(hex){
+  const g=new THREE.Group(),col=new THREE.Color(hex),L=c=>new THREE.MeshLambertMaterial({color:c});
+  const body=new THREE.Mesh(new THREE.BoxGeometry(4.2,.8,2),L(col));body.position.y=2.2;body.castShadow=true;g.add(body);
+  const tank=new THREE.Mesh(new THREE.CylinderGeometry(.8,.8,2.3,16),L(0xf1f1ec));tank.rotation.z=Math.PI/2;tank.position.set(-.5,3.1,0);tank.castShadow=true;g.add(tank);
+  const cab=new THREE.Mesh(new THREE.BoxGeometry(1.3,1.4,1.6),L(0x1f2b36));cab.position.set(1.5,3.2,0);cab.castShadow=true;g.add(cab);
+  for(const[dx,dz]of[[1.5,1.25],[1.5,-1.25],[-1.5,1.25],[-1.5,-1.25]]){const w=new THREE.Mesh(new THREE.CylinderGeometry(.95,.95,.35,14),L(0x1b1b1b));w.rotation.x=Math.PI/2;w.position.set(dx,.95,dz);w.castShadow=true;g.add(w);const leg=new THREE.Mesh(new THREE.BoxGeometry(.25,1.2,.25),L(col));leg.position.set(dx,1.6,dz*.85);g.add(leg)}
+  const boom=new THREE.Mesh(new THREE.BoxGeometry(.25,.18,17),L(col.clone().multiplyScalar(.65)));boom.position.set(-2.4,1.7,0);boom.castShadow=true;g.add(boom);
+  const N=180,pos=new Float32Array(N*3),geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  const pts=new THREE.Points(geo,new THREE.PointsMaterial({color:0xd6f1ff,size:.32,transparent:true,opacity:.8,depthWrite:false}));pts.position.set(-2.4,0,0);g.add(pts);
+  const beacon=new THREE.Mesh(new THREE.SphereGeometry(.5,12,10),new THREE.MeshBasicMaterial({color:0xff3b30}));beacon.position.set(1.5,4.3,0);g.add(beacon);
+  g.userData={boom,pts,beacon,N};scene.add(g);return g;
+}
+function initScene(){
+  const canvas=$('#c');renderer=new THREE.WebGLRenderer({canvas,antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  scene=new THREE.Scene();scene.background=SKY.clone();scene.fog=new THREE.Fog(SKY.clone(),150,330);
+  camera=new THREE.PerspectiveCamera(42,1,.5,800);
+  hemi=new THREE.HemisphereLight(0xe2f0ff,0x4a5a3a,.85);scene.add(hemi);
+  sun=new THREE.DirectionalLight(0xfff1d6,.95);sun.position.set(-60,95,45);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-95,right:95,top:75,bottom:-75,near:10,far:260});scene.add(sun);
+  const ground=new THREE.Mesh(new THREE.PlaneGeometry(500,500),new THREE.MeshLambertMaterial({color:0x6f8450}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+  const roadM=new THREE.MeshLambertMaterial({color:0x9a958a});
+  for(const z of ROADS_Z){const m=new THREE.Mesh(new THREE.PlaneGeometry(130,3),roadM);m.rotation.x=-Math.PI/2;m.position.set(-5,.03,z);m.receiveShadow=true;scene.add(m)}
+  for(const x of[-48,-24,0,24,48]){const m=new THREE.Mesh(new THREE.PlaneGeometry(3,69),roadM);m.rotation.x=-Math.PI/2;m.position.set(x,.03,0);m.receiveShadow=true;scene.add(m)}
+  // creek (low ground that drives the moisture story)
+  const creek=new THREE.Mesh(new THREE.PlaneGeometry(1.6,140),new THREE.MeshLambertMaterial({color:0x4f86b8}));creek.rotation.x=-Math.PI/2;creek.rotation.z=.18;creek.position.set(60,.04,0);scene.add(creek);
+  const tex=cropTex();
+  for(const f of S.fields){
+    const mat=new THREE.MeshLambertMaterial({map:tex,color:0xffffff});const m=new THREE.Mesh(new THREE.PlaneGeometry(f.w,f.d),mat);m.rotation.x=-Math.PI/2;m.position.set(f.x,.05,f.z);m.receiveShadow=true;scene.add(m);
+    const ov=new THREE.Mesh(new THREE.BoxGeometry(f.w,.06,1),new THREE.MeshBasicMaterial({color:0x40c4ff,transparent:true,opacity:.38,depthWrite:false}));ov.position.set(f.x,.09,f.z);scene.add(ov);
+    F3D[f.id]={m,mat,ov};
+    const pole=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,3,8),new THREE.MeshLambertMaterial({color:0xdddddd}));pole.position.set(f.x+8.6,1.5,f.z-7.6);pole.castShadow=true;scene.add(pole);
+    const bulb=new THREE.Mesh(new THREE.SphereGeometry(.55,14,10),new THREE.MeshBasicMaterial({color:0x81c995}));bulb.position.set(f.x+8.6,3.2,f.z-7.6);scene.add(bulb);S3D[f.id]=bulb;
+  }
+  const barn=new THREE.Mesh(new THREE.BoxGeometry(9,5,7),new THREE.MeshLambertMaterial({color:0x9b2f2a}));barn.position.set(-66,2.5,42);barn.castShadow=true;scene.add(barn);
+  const roof=new THREE.Mesh(new THREE.CylinderGeometry(.01,5.2,3,4,1),new THREE.MeshLambertMaterial({color:0x44474d}));roof.rotation.y=Math.PI/4;roof.scale.set(1.25,1,.95);roof.position.set(-66,6.4,42);scene.add(roof);
+  for(const dx of[-57,-52]){const s=new THREE.Mesh(new THREE.CylinderGeometry(2.2,2.2,11,20),new THREE.MeshLambertMaterial({color:0xb8bdc4}));s.position.set(dx,5.5,43);s.castShadow=true;scene.add(s);const c=new THREE.Mesh(new THREE.ConeGeometry(2.3,1.8,20),new THREE.MeshLambertMaterial({color:0x9aa0a8}));c.position.set(dx,11.9,43);scene.add(c)}
+  cloudGroup=new THREE.Group();const cm=[0x6b7380,0x7c8592,0x5c6470].map(c=>new THREE.MeshLambertMaterial({color:c,transparent:true,opacity:.9}));
+  for(let i=0;i<70;i++){const s=new THREE.Mesh(new THREE.SphereGeometry(3+Math.random()*4.5,12,10),cm[i%3]);s.position.set(-34+Math.random()*40,22+Math.random()*6,-55+Math.random()*110);s.scale.y=.6;cloudGroup.add(s)}scene.add(cloudGroup);
+  const N=1500;rainData=[];const rp=new Float32Array(N*6);for(let i=0;i<N;i++)rainData.push({rx:Math.random(),z:-55+Math.random()*110,y:Math.random()*22,v:28+Math.random()*12});
+  const rg=new THREE.BufferGeometry();rg.setAttribute('position',new THREE.BufferAttribute(rp,3));rain=new THREE.LineSegments(rg,new THREE.LineBasicMaterial({color:0xa9bccf,transparent:true,opacity:.55}));scene.add(rain);
+  radarMesh=new THREE.Mesh(new THREE.PlaneGeometry(1,110),new THREE.MeshBasicMaterial({map:radarTex(),transparent:true,opacity:.6,depthWrite:false}));radarMesh.rotation.x=-Math.PI/2;radarMesh.position.y=.25;scene.add(radarMesh);
+  for(const r of S.rigs)R3D[r.id]=rigMesh(r.hex);
+  // orbit
+  let drag=null;canvas.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY};canvas.setPointerCapture(e.pointerId)});
+  canvas.addEventListener('pointermove',e=>{if(!drag)return;cam.theta-=(e.clientX-drag.x)*.005;cam.phi=clamp(cam.phi-(e.clientY-drag.y)*.004,.3,1.35);drag={x:e.clientX,y:e.clientY}});
+  canvas.addEventListener('pointerup',()=>drag=null);
+  canvas.addEventListener('wheel',e=>{e.preventDefault();cam.r=clamp(cam.r*(1+e.deltaY*.001),60,240)},{passive:false});
+  new ResizeObserver(resize).observe($('#stage'));resize();
+}
+function resize(){const st=$('#stage'),w=st.clientWidth,h=st.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
+function updateCam(){const sp=Math.sin(cam.phi);camera.position.set(cam.target.x+cam.r*sp*Math.sin(cam.theta),cam.r*Math.cos(cam.phi),cam.target.z+cam.r*sp*Math.cos(cam.theta));camera.lookAt(cam.target)}
+const MOIST=[[.22,new THREE.Color(0xd8c48a)],[.31,new THREE.Color(0x8fbf6a)],[.37,new THREE.Color(0x4f9bd9)],[.45,new THREE.Color(0x1f4f9e)]];
+function moistColor(v){for(let i=1;i<MOIST.length;i++){if(v<=MOIST[i][0]){const[a,ca]=MOIST[i-1],[b,cb]=MOIST[i];return ca.clone().lerp(cb,clamp((v-a)/(b-a),0,1))}}return MOIST[MOIST.length-1][1].clone()}
+function syncScene(dtR,time){
+  const t=S.t;
+  for(const f of S.fields){const o=F3D[f.id];
+    if(view==='moist')o.mat.color.copy(moistColor(f.moisture));
+    else if(f.wet&&f.sprayed<f.acres)o.mat.color.setHex(0x8494a6);
+    else if(f.blockedUntil>t)o.mat.color.setHex(0xd9c27a);
+    else o.mat.color.setHex(0xffffff);
+    const p=f.sprayed/f.acres;o.ov.visible=p>0&&view!=='moist';o.ov.scale.z=Math.max(.01,p*f.d);o.ov.position.z=f.z-f.d/2+o.ov.scale.z/2;o.ov.material.color.setHex(f.washoff>0?0xff5a4f:0x40c4ff);
+    const b=S3D[f.id];b.material.color.copy(f.moisture>=TRAFFIC_LIMIT?new THREE.Color(0xff5a4f):f.moisture>=.33?new THREE.Color(0xfdd663):new THREE.Color(0x81c995));b.scale.setScalar(1+.25*Math.sin(time*4+f.x));
+  }
+  for(const r of S.rigs){if(!R3D[r.id])R3D[r.id]=rigMesh(r.hex);const g=R3D[r.id],u=g.userData;g.position.set(r.x,0,r.z);g.rotation.y=-r.heading;
+    const spraying=r.state==='spray'&&!agentBusy;u.boom.scale.z=r.state==='spray'?1:.2;u.pts.visible=spraying&&running;u.beacon.visible=r.state==='down'&&Math.sin(time*8)>0;
+    if(u.pts.visible){const a=u.pts.geometry.attributes.position;for(let i=0;i<u.N;i++){const ph=(time*2.2+i*.137)%1;a.array[i*3]=(Math.random()-.5)*.6;a.array[i*3+1]=1.6-ph*1.6;a.array[i*3+2]=-8.2+(i/u.N)*16.4}a.needsUpdate=true}
+  }
+  const fx=frontX(S,t),band=S.storm.band;
+  cloudGroup.position.x=fx;cloudGroup.visible=fx>-140&&fx<160;
+  const raining=fx>-75&&fx-band<75;rain.visible=raining;
+  if(raining){const a=rain.geometry.attributes.position.array;for(let i=0;i<rainData.length;i++){const d=rainData[i];if(running&&!agentBusy)d.y-=d.v*dtR;if(d.y<0)d.y=22;const x=fx-d.rx*band;a.set([x,d.y,d.z,x-.25,d.y-1.3,d.z],i*6)}rain.geometry.attributes.position.needsUpdate=true}
+  radarMesh.visible=view==='radar'&&fx>-120;radarMesh.scale.x=band+14;radarMesh.position.x=fx-band/2+3;
+  let k=clamp(1-Math.max(0,-30-fx)/90,0,1)*clamp(1-Math.max(0,fx-band-40)/70,0,1);
+  sun.intensity=.95-.55*k;hemi.intensity=.85-.35*k;scene.background.copy(SKY).lerp(STORMSKY,k*.85);scene.fog.color.copy(scene.background);
+  updateCam();
+}
+// ---------- labels & HUD ----------
+const lab={};const v3=new THREE.Vector3();
+function initLabels(){const L=$('#labels');for(const f of S.fields){const d=document.createElement('div');d.className='fl';L.appendChild(d);lab[f.id]=d}}
+function rigLabel(r){if(!lab[r.id]){const d=document.createElement('div');d.className='rl';d.style.background=r.hex;$('#labels').appendChild(d);lab[r.id]=d}return lab[r.id]}
+function place(el,x,y,z){v3.set(x,y,z).project(camera);if(v3.z>1){el.style.display='none';return}const st=$('#stage');el.style.display='';el.style.left=((v3.x*.5+.5)*st.clientWidth)+'px';el.style.top=((-v3.y*.5+.5)*st.clientHeight)+'px'}
+function fieldStatus(f){if(f.washoff>0)return['wash',`wash-off risk ${fmt(f.washoff)} ac`];if(f.doneAt!=null)return['done','done ✓'];if(f.wet)return['wet','rained out'];if(f.blockedUntil>S.t)return['blocked','too wet to drive'];const p=f.sprayed/f.acres;return['',p>0?`${Math.round(p*100)}% · ${PRODUCTS[f.prod].name.toLowerCase()}`:`${f.acres} ac · ${PRODUCTS[f.prod].name.toLowerCase()}`]}
+function updateLabels(){
+  for(const f of S.fields){const[c,s]=fieldStatus(f);const el=lab[f.id];const h=`<b>${f.id}</b> ${esc(f.name)}<br><em>${s}</em>`;if(el._h!==h){el.innerHTML=h;el._h=h;el.className='fl '+c}place(el,f.x,.5,f.z-f.d/2+1)}
+  for(const r of S.rigs){const el=rigLabel(r);const s=r.state==='down'?`${r.id} · broken`:r.custom&&S.t<r.availableFrom?`${r.id} · en route`:r.id;if(el.textContent!==s)el.textContent=s;place(el,r.x,5.6,r.z)}
+}
+function legend(){const L=$('#legend');L.style.display='flex';
+  L.innerHTML=view==='moist'?`<span><i style="background:#d8c48a"></i>Dry</span><span><i style="background:#8fbf6a"></i>Good</span><span><i style="background:#4f9bd9"></i>Near limit</span><span><i style="background:#1f4f9e"></i>Too wet to drive</span>`
+  :view==='radar'?`<span><i style="background:#3cc85a"></i>Light rain</span><span><i style="background:#fad228"></i>Moderate</span><span><i style="background:#e63c28"></i>Heavy</span>`
+  :`<span><i style="background:#40c4ff"></i>Sprayed</span><span><i style="background:#ff5a4f"></i>Wash-off risk</span><span><i style="background:#8494a6"></i>Rained out</span><span><i style="background:#d9c27a"></i>Too wet to drive</span>`}
+function stormText(){const fx=frontX(S,S.t);if(fx<-60)return`⛈️ Storm front reaches west fields at ${hhmm(S.storm.arr)}`;const now=S.fields.filter(f=>rainingAt(S,f.x,S.t)).map(f=>f.id);if(now.length)return`🌧️ Raining on ${now.join(', ')}`;if(fx-S.storm.band>50)return'Storm has passed';return'⛈️ Storm front crossing the area'}
+
+// ---------- UI ----------
+let S=newState(),view='crop',running=false,speed=1,agentBusy=false,guided=false,events=[],timeline=[],ended=false,decide=null;
+const BASE=4; // sim minutes per real second at 1x
+function rigStatus(r){const f=r.target&&fieldById(S,r.target);
+  if(r.custom&&S.t<r.availableFrom)return`Custom rig arriving ${hhmm(r.availableFrom)}`;
+  if(r.state==='down')return`Broken down · back ${hhmm(r.downUntil)}`;
+  if(r.state==='spray'&&f)return`Spraying ${f.id} · ${Math.round(f.sprayed/f.acres*100)}%`;
+  if(r.state==='travel'&&f)return`Driving to ${f.id}`;
+  if(r.state==='hold')return'Waiting · next field too wet';
+  return r.queue.length?'Ready':'Done for the day'}
+function renderBoard(){
+  let safe=0,left=0,wash=0,wet=0;for(const f of S.fields){safe+=f.sprayed-f.washoff;wash+=f.washoff;if(f.wet)wet+=f.acres-f.sprayed;else left+=f.acres-f.sprayed}
+  $('#kSafe').textContent=fmt(safe);$('#kLeft').textContent=fmt(left);$('#kWash').textContent=fmt(wash);$('#kWet').textContent=fmt(wet);
+  $('#rigs').innerHTML=S.rigs.map(r=>`<div class="rig"><span class="dot" style="background:${r.hex}"></span><div style="min-width:0"><b>${r.id}</b> <span class="st">${r.custom?'custom hire':'co-op crew'}</span><div class="st">${esc(rigStatus(r))}</div><div class="q">${r.queue.map(id=>{const f=fieldById(S,id);return f.doneAt==null&&!f.wet?`<i class="${id===r.target?'cur':''}">${id}</i>`:''}).join('')||'<i>—</i>'}</div></div></div>`).join('');
+  $('#clock').innerHTML=`<small>Tue Jun 16</small>${hhmm(S.t)}`;$('#stormPill').textContent=stormText();
+  $('#playBtn').textContent=running?'❚❚ Pause':'▶ Play';
+  document.querySelectorAll('.inject button').forEach(b=>b.disabled=agentBusy||ended);
+}
+function logLine(html){const d=document.createElement('div');d.innerHTML=`${hhmm(S.t)} · ${html}`;$('#log').prepend(d)}
+function toast(msg,color='var(--ok)'){const el=document.createElement('div');el.className='toast';el.style.borderLeftColor=color;el.textContent=msg;$('#toasts').appendChild(el);requestAnimationFrame(()=>el.classList.add('show'));setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),300)},4200)}
+function setSpeed(s){speed=s;document.querySelectorAll('#speedSeg button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.s===s))}
+
+// ---------- events ----------
+function applyFx(st,e){
+  if(e.kind==='storm')st.storm.arr=e.arr;
+  else if(e.kind==='breakdown'){const r=st.rigs.find(x=>x.id===e.rig);if(r){r.state='down';r.downUntil=e.until;r.target=null;r.path=[]}}
+  else e.fields.forEach(id=>{const f=fieldById(st,id);f.moisture=Math.max(f.moisture,.42);f.blockedUntil=e.until});
+}
+function applyEvent(kind){
+  let e,summary;
+  if(kind==='storm'){const old=S.storm.arr;e={kind,arr:Math.max(S.t+30,Math.min(old,S.t+165))};logLine(`<b>NWS radar:</b> storm front sped up · now ${hhmm(e.arr)} (was ${hhmm(old)})`);summary=`Storm front now reaches the west fields at ${hhmm(e.arr)}, ${fmt((old-e.arr)/6)/10} h earlier than this morning’s forecast.`}
+  else if(kind==='breakdown'){const r=S.rigs.find(x=>x.id==='R3'&&(x.state==='spray'||x.state==='travel'))||S.rigs.find(x=>!x.custom&&x.state!=='down'&&x.queue.length);if(!r)return null;e={kind,rig:r.id,until:S.t+180};logLine(`<b>${r.id} crew:</b> “hydraulic leak, rig down ~3 h”`);summary=`${r.id} reported a hydraulic leak and is down until ${hhmm(e.until)}.`}
+  else{const wet=remaining(S).sort((a,b)=>b.moisture-a.moisture).slice(0,3);if(!wet.length)return null;e={kind,fields:wet.map(f=>f.id),until:S.t+240};logLine(`<b>WHIN sensors:</b> moisture spike on ${e.fields.join(', ')}`);summary=`Subsoil moisture on ${e.fields.join(', ')} jumped above the trafficability limit (${TRAFFIC_LIMIT*100}% VWC). Driving a sprayer there now would rut the field.`}
+  applyFx(S,e);timeline.push({...e,t:S.t});if(timeline.length===1)resetCounters(S);return summary;
+}
+// the morning spreadsheet, hit by the same disruptions, with nobody re-planning
+function replayMorning(){const s=newState();let i=0;while(s.t<DAY_END){while(i<timeline.length&&s.t>=timeline[i].t-1e-6){if(i===0)resetCounters(s);applyFx(s,timeline[i]);i++}step(s,DT)}return planCost(s)}
+async function trigger(kind){
+  if(agentBusy||ended)return;const summary=applyEvent(kind);if(!summary){toast('Nothing to disrupt right now.','var(--warn)');return}
+  await runAgent(kind,summary);
+}
+function cl(cls,html){const d=document.createElement('div');d.className='cl '+cls;d.innerHTML=html;const c=$('#console');c.appendChild(d);c.scrollTop=c.scrollHeight;return d}
+async function thought(text){const d=cl('th','');for(let i=0;i<=text.length;i+=4){d.textContent=text.slice(0,i);await sleep(8)}d.textContent=text}
+async function call(name,args,ms,ret){const d=cl('',`<span class="lat"><span class="spin"></span></span><div class="fn">${esc(name)}(</div><div class="args">${esc(JSON.stringify(args))})</div>`);await sleep(ms);d.querySelector('.lat').textContent=`${ms} ms`;d.insertAdjacentHTML('beforeend',`<div class="ret">↳ ${esc(typeof ret==='function'?ret():ret)}</div>`);$('#console').scrollTop=1e9}
+async function runAgent(kind,summary){
+  agentBusy=true;$('#agentState').textContent='Planning';$('#options').innerHTML='';$('#console').innerHTML='';renderBoard();
+  cl('sys',`event · ${esc(summary)}`);
+  const rem=remaining(S),acres=rem.reduce((a,f)=>a+f.acres-f.sprayed,0);
+  await thought(kind==='storm'?'The forecast moved up. Any field sprayed less than its rainfast window before rain arrives is wasted product and runoff risk. I need current soil, radar and fleet state before re-planning.'
+    :kind==='breakdown'?'One rig is out for ~3 hours and the storm is still coming. I need to know which fields are now at risk and who can cover them.'
+    :'Three fields can’t carry a sprayer right now. Waiting wastes crew hours; skipping them may push work into the storm. Pull the latest data.');
+  const ms=rem.map(f=>f.moisture);
+  await call('get_whin_soil_telemetry',{fields:rem.map(f=>f.id),depths_in:[2,4,8]},620,()=>`${rem.length} fields · VWC ${Math.round(Math.min(...ms)*100)}–${Math.round(Math.max(...ms)*100)}% · ${rem.filter(f=>f.moisture>=TRAFFIC_LIMIT).length} above trafficability limit`);
+  await call('get_nws_radar_nowcast',{lat:40.42,lon:-86.85,horizon_h:8},540,()=>`front reaches west fields ${hhmm(S.storm.arr)} · east fields ${hhmm(S.storm.arr+(26+60)/S.storm.speed)} · moving east ~33 mph`);
+  await call('get_erp_fleet_schedule',{coop:'wabash-valley',date:'2026-06-16'},480,()=>`${S.rigs.filter(r=>r.state!=='down').length} rigs available · ${S.rigs.filter(r=>r.state==='down').length} down · ${rem.length} fields left (${fmt(acres)} ac)`);
+  const t0=performance.now();const plans=strategies(S,kind);for(const p of plans){p.c=planCost(project(S,p));p.deferred=remaining(S).filter(f=>!Object.values(p.queues).some(q=>q.includes(f.id))).map(f=>f.id)}
+  const keep=planCost(project(S,{queues:currentQueues(S)}));plans.sort((a,b)=>a.c.total-b.c.total);const solveMs=Math.max(1,Math.round(performance.now()-t0));
+  await call('solve_reallocation',{objective:'min_total_cost',constraints:['rainfast_window','trafficability','crew_hours','travel_time'],candidates:plans.length},Math.max(300,solveMs),`${plans.length} plans simulated to 19:00 in ${solveMs} ms (prototype heuristic; production: Google OR-Tools CP-SAT)`);
+  await thought('Ranked by total cost. Now write a plain-language trade-off card for each plan. I recommend; the manager decides.');
+  const live=$('#apiKey').value.trim();let texts=null;
+  const tc=cl('',`<span class="lat"><span class="spin"></span></span><div class="fn">explain_tradeoffs(</div><div class="args">${esc(JSON.stringify({plans:plans.map(p=>p.key),responseSchema:'TradeoffCardV1'}))})</div>`);const ts=performance.now();
+  if(live){try{texts=await geminiExplain(plans,keep)}catch(e){cl('sys',`Gemini call failed (${esc(e.message)}); using template text.`)}}else await sleep(700);
+  tc.querySelector('.lat').textContent=`${Math.round(performance.now()-ts)} ms`;tc.insertAdjacentHTML('beforeend',`<div class="ret">↳ ${plans.length} cards · ${texts?'written live by Gemini':'template text (add a Gemini key for live text)'}</div>`);
+  renderOptions(plans,keep,texts);$('#agentState').textContent='Awaiting approval';
+  const gen=S;const choice=await new Promise(res=>decide=res);decide=null;
+  if(S!==gen)return;
+  if(choice){applyPlan(S,choice);if(choice.extraRig&&!R3D.R4)R3D.R4=rigMesh(CUSTOM_RIG.hex);
+    logLine(`<b>Manager approved:</b> ${esc(choice.title)}`);cl('sys',`approved by co-op manager at ${hhmm(S.t)} → dispatched`);
+    toast(`Approved: ${choice.title}. SMS sent to crews; ISOXML task files queued for the rigs (simulated).`)}
+  else{logLine('<b>Manager kept</b> the current plan');cl('sys','manager kept the current plan');}
+  $('#options').innerHTML=choice?`<div class="card"><p class="label">Dispatched</p><div style="font-size:13px"><b>${esc(choice.title)}</b><div class="foot" style="margin-top:4px">${Object.entries(choice.queues).filter(([,q])=>q.length).map(([id,q])=>`${id}: ${q.join(' → ')}`).join('<br>')}</div></div></div>`:'';
+  agentBusy=false;$('#agentState').textContent='Watching';
+}
+function template(p,keep){const c=p.c,d=c.total-keep.total;return{headline:p.title,rationale:`${p.idea} Sprays ${fmt(c.safe)} ac safely today, leaves ${fmt(c.wash)} ac at wash-off risk and pushes ${fmt(c.def)} ac to tomorrow${c.custAc?`; the hired rig covers ${fmt(c.custAc)} ac`:''}. ${Math.abs(d)<1?'Same cost as the current plan.':d<0?`Saves ${money(-d)} versus the current plan.`:`Costs ${money(d)} more than the current plan.`}`}}
+async function geminiExplain(plans,keep){
+  const model=$('#modelId').value.trim()||'gemini-2.5-flash';
+  const facts=plans.map(p=>({key:p.key,title:p.title,idea:p.idea,acres_sprayed_safely:Math.round(p.c.safe),washoff_risk_acres:Math.round(p.c.wash),deferred_acres:Math.round(p.c.def),crew_hours:+p.c.hrs.toFixed(1),custom_hire_usd:Math.round(p.c.custom),total_cost_usd:Math.round(p.c.total),vs_current_plan_usd:Math.round(p.c.total-keep.total)}));
+  const body={contents:[{role:'user',parts:[{text:`You advise an Indiana farm co-op manager during spraying season. For each plan below write a short headline (max 8 words) and a 2-sentence rationale for a busy manager. Use only these numbers; do not invent any. Negative vs_current_plan_usd means it saves money.\n${JSON.stringify(facts)}`}]}],
+    generationConfig:{responseMimeType:'application/json',responseSchema:{type:'OBJECT',properties:{cards:{type:'ARRAY',items:{type:'OBJECT',properties:{key:{type:'STRING'},headline:{type:'STRING'},rationale:{type:'STRING'}},required:['key','headline','rationale']}}},required:['cards']}}};
+  const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':$('#apiKey').value.trim()},body:JSON.stringify(body)});
+  const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j?.error?.message||`HTTP ${r.status}`);
+  const txt=(j.candidates?.[0]?.content?.parts||[]).map(p=>p.text||'').join('');const out=JSON.parse(txt);return Object.fromEntries((out.cards||[]).map(c=>[c.key,c]));
+}
+function renderOptions(plans,keep,texts){
+  $('#options').innerHTML=plans.map((p,i)=>{const c=p.c,d=c.total-keep.total,tx=(texts&&texts[p.key])||template(p,keep);
+    return`<div class="opt ${i===0?'best':''}"><h4><span class="rank">#${i+1}${i===0?' recommended':''}</span>${esc(tx.headline)}</h4><p>${esc(tx.rationale)}</p>
+    <div class="mg"><div><b>${fmt(c.safe)}</b><span>ac sprayed safely</span></div><div><b style="color:${c.wash>0?'var(--bad)':'inherit'}">${fmt(c.wash)}</b><span>ac wash-off risk</span></div><div><b>${fmt(c.def)}</b><span>ac to tomorrow</span></div>
+    <div><b>${c.hrs.toFixed(1)} h</b><span>crew time${c.ot>0?` (${c.ot.toFixed(1)} h OT)`:''}</span></div><div><b>${money(c.total)}</b><span>plan cost</span></div><div><b>${p.deferred.length?esc(p.deferred.join(', ')):'none'}</b><span>fields deferred</span></div></div>
+    <div class="delta" style="color:${d<-1?'var(--ok)':d>1?'var(--bad)':'var(--muted)'}">${Math.abs(d)<1?'Same as current plan':d<0?`Saves ${money(-d)} vs. current plan`:`${money(d)} more than current plan`}</div>
+    <details><summary>Show the math</summary><div>Wash-off: ${fmt(c.wash)} ac × (product + $8.39 re-spray) = ${money(c.washC)}<br>Deferred: ${fmt(c.def)} ac × ($8.39 re-schedule + $${DELAY_RISK} delay risk) = ${money(c.deferC)}<br>Crew: ${c.hrs.toFixed(1)} h × $${LABOR}${c.ot>0?` + ${c.ot.toFixed(1)} h OT × $${OT_PREM}`:''} = ${money(c.labor)}<br>Travel: ${c.mi.toFixed(1)} mi × $${MILE} = ${money(c.travel)}${c.custom?`<br>Custom rig: ${fmt(c.custAc)} ac × $8.39 + $${CALLOUT} call-out = ${money(c.custom)}`:''}<br>Total = ${money(c.total)}</div></details>
+    <div class="acts"><button class="btn primary" data-pick="${i}">Approve &amp; dispatch</button></div></div>`}).join('')+`<button class="btn" id="keepBtn">Keep current plan</button>`;
+  document.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>decide&&decide(plans[+b.dataset.pick]));$('#keepBtn').onclick=()=>decide&&decide(null);
+}
+function endDay(){
+  ended=true;running=false;const c=planCost(S);const baseline=timeline.length?replayMorning():null;const B=$('#banner');B.style.display='block';
+  B.innerHTML=`<h3>End of day · 19:00</h3>${baseline?`<table><tr><th></th><th>Morning spreadsheet<br>(projected)</th><th>With the agent</th></tr>
+  <tr><td>Acres sprayed safely</td><td>${fmt(baseline.safe)}</td><td>${fmt(c.safe)}</td></tr>
+  <tr><td>Acres at wash-off risk</td><td>${fmt(baseline.wash)}</td><td>${fmt(c.wash)}</td></tr>
+  <tr><td>Acres pushed to tomorrow</td><td>${fmt(baseline.def)}</td><td>${fmt(c.def)}</td></tr>
+  <tr><td>Cost from first disruption on</td><td>${money(baseline.total)}</td><td>${money(c.total)}</td></tr></table>
+  <div class="foot" style="margin-top:8px">${c.total<baseline.total?`Agent plans saved <b style="color:var(--ok)">${money(baseline.total-c.total)}</b> versus sticking with the morning spreadsheet.`:'No savings today versus the morning plan.'} Simulated day; costs use Purdue custom rates plus stated assumptions.</div>`
+  :`<div class="foot">${fmt(c.safe)} ac sprayed safely, ${fmt(c.wash)} ac at wash-off risk. Inject a disruption next time to compare against the morning plan.</div>`}
+  <div style="margin-top:10px"><button class="btn" onclick="resetAll()">Reset day</button></div>`;
+  renderBoard();
+}
+function resetAll(){
+  for(const k of Object.keys(R3D)){scene.remove(R3D[k]);delete R3D[k]}for(const k of Object.keys(lab)){lab[k].remove();delete lab[k]}
+  if(decide)decide(null);S=newState();for(const r of S.rigs)R3D[r.id]=rigMesh(r.hex);initLabels();
+  running=false;guided=false;events=[];timeline=[];ended=false;agentBusy=false;
+  $('#banner').style.display='none';$('#options').innerHTML='';$('#console').innerHTML='<div class="placeholder">Press <b>▶ Guided demo</b> for the 60-second storyline, or press Play and inject a disruption yourself.</div>';
+  $('#log').innerHTML='<div>07:00 · <b>Morning plan loaded</b> from the co-op spreadsheet.</div>';$('#agentState').textContent='Watching';setSpeed(1);renderBoard();
+}
+
+// ---------- wiring ----------
+$('#playBtn').onclick=()=>{if(ended)return;running=!running;renderBoard()};
+document.querySelectorAll('#speedSeg button').forEach(b=>b.onclick=()=>setSpeed(+b.dataset.s));
+document.querySelectorAll('#viewSeg button').forEach(b=>b.onclick=()=>{view=b.dataset.v;document.querySelectorAll('#viewSeg button').forEach(x=>x.setAttribute('aria-pressed',x===b));legend()});
+document.querySelectorAll('.inject button').forEach(b=>b.onclick=()=>trigger(b.dataset.ev));
+$('#resetBtn').onclick=resetAll;
+$('#setBtn').onclick=()=>{const s=$('#settings');s.style.display=s.style.display==='block'?'none':'block'};
+$('#apiKey').oninput=()=>{$('#modeChip').textContent=$('#apiKey').value.trim()?'Live Gemini explanations · simulated sensors':'Simulated data · real planning math'};
+$('#demoBtn').onclick=()=>{resetAll();guided=true;events=[{t:8.25*60,kind:'breakdown'},{t:10*60,kind:'storm'}];setSpeed(10);running=true;toast('Guided demo: the agent pauses the day at each disruption. You approve the plan.','var(--accent)')};
+
+initScene();initLabels();legend();renderBoard();
+let last=performance.now(),acc=0,lastUi=0;
+function frame(now){
+  const dtR=Math.min(.1,(now-last)/1000);last=now;
+  if(running&&!agentBusy&&!ended){acc+=dtR*speed*BASE;while(acc>=DT&&!agentBusy){step(S,DT);acc-=DT;
+      const ev=events.find(e=>!e.fired&&S.t>=e.t);if(ev){ev.fired=true;acc=0;trigger(ev.kind);break}
+      if(S.t>=DAY_END){endDay();break}}}
+  syncScene(dtR,now/1000);renderer.render(scene,camera);updateLabels();
+  if(now-lastUi>200){renderBoard();lastUi=now}
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
